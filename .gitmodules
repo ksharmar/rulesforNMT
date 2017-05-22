@@ -1,0 +1,3 @@
+[submodule "dcu-impl"]
+	path = dcu-impl
+	url = https://github.com/chrishokamp/constrained_decoding
