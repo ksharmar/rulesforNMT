@@ -23,6 +23,8 @@
 #  years: 1997 nian -> 1997 | in 1997 | 1997 years
 
 import sys, re, optparse
+import decimal
+import json
 
 # You can change this to gb2312 but it hasn't been tested
 encoding = "utf8"
@@ -148,7 +150,10 @@ scan_re = re.compile(scan_re)
 point_re = re.compile(point_re)
 
 def float_to_str(n):
-    s = str(float(n)).split(".")
+    ctx = decimal.Context()
+    ctx.prec = 20
+    s = format(ctx.create_decimal(repr(n)), "f")
+    s = s.split(".")
     intpart = s[0]
     fracpart = s[1]
 
@@ -170,7 +175,7 @@ def float_to_str(n):
     else:
         return "%s.%s" % (intpart, fracpart)
 
-def process_chinese(s, f, translate_yi=True):
+def process_chinese(s, translate_yi=True):
     result = []
     pos = 0
     for m in number_re.finditer(s):
@@ -282,7 +287,8 @@ def process_chinese(s, f, translate_yi=True):
                 if n == int(n) and 1 <= n <= 10:
                     english.append(english_nums[n])
         except:
-            sys.stderr.write("warning: couldn't encode number %s or time %s\n" % (repr(n), repr(t)))
+            sys.stderr.write("warning: couldn't encode number %s or time %s (original: %s)\n" % (repr(n), repr(t), french))
+            raise
             continue
 
         if french in chinese_one and not translate_yi:
@@ -296,29 +302,17 @@ def process_chinese(s, f, translate_yi=True):
         end = m.end()
         while s[end-1].isspace():
             end -= 1
-        result.append(s[pos:start])
-        result.append(f(s[start:end], english))
+        result.append((start, end, english))
         pos = end
-    result.append(s[pos:])
-    return "".join(result)
+    return result
 
 if __name__ == "__main__":
     optparser = optparse.OptionParser()
-    optparser.add_option("-m", "--mark", dest="tag", help="mark numbers with SGML tag")
     optparser.add_option("-1", "--translate-yi", dest="translate_yi", action="store_true", default=False, help="translate yi1 as 1")
     (opts,args) = optparser.parse_args()
 
-    def f_xml(fr, ens):
-        return '<%s feature="num" english="%s" prob="%s">%s</%s>' % (opts.tag, "|".join(ens), "|".join('2.71828' for e in ens), fr, opts.tag)
-    def f_translate(fr, ens):
-        return ens[0]
+    for line in sys.stdin:
+        line = line.rstrip()
+        spans = process_chinese(line, translate_yi=opts.translate_yi)
+        print(json.dumps([e[0].split() for (_,_,e) in spans]))
 
-    if opts.tag is not None:
-        f = f_xml
-    else:
-        f = f_translate
-    
-    line = sys.stdin.readline()
-    while line != "":
-        sys.stdout.write(process_chinese(line, f, translate_yi=opts.translate_yi))
-        line = sys.stdin.readline()
