@@ -151,11 +151,14 @@ point_re = re.compile(point_re)
 
 def float_to_str(n):
     ctx = decimal.Context()
-    ctx.prec = 20
+    ctx.prec = 10
     s = format(ctx.create_decimal(repr(n)), "f")
     s = s.split(".")
     intpart = s[0]
-    fracpart = s[1]
+    try:
+        fracpart = s[1]
+    except IndexError:
+        fracpart = "0"
 
     # don't put commas in four-digit numbers
     # not only is it optional for cardinals, we don't want to mess up
@@ -306,6 +309,9 @@ def process_chinese(s, translate_yi=True):
         pos = end
     return result
 
+def tokenize_digits(s):
+    return re.sub(r"(\d)", r" \1 ", s)
+
 if __name__ == "__main__":
     optparser = optparse.OptionParser()
     optparser.add_option("-1", "--translate-yi", dest="translate_yi", action="store_true", default=False, help="translate yi1 as 1")
@@ -314,5 +320,5 @@ if __name__ == "__main__":
     for line in sys.stdin:
         line = line.rstrip()
         spans = process_chinese(line, translate_yi=opts.translate_yi)
-        print(json.dumps([e[0].split() for (_,_,e) in spans]))
+        print(json.dumps([tokenize_digits(e[0]).split() for (_,_,e) in spans]))
 
