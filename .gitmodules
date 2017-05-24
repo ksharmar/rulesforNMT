@@ -1,3 +1,6 @@
 [submodule "dcu-impl"]
 	path = dcu-impl
 	url = https://github.com/chrishokamp/constrained_decoding
+[submodule "xnmt"]
+	path = xnmt
+	url = https://github.com/john-hewitt/xnmt
