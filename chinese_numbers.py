@@ -317,8 +317,11 @@ if __name__ == "__main__":
     optparser.add_option("-1", "--translate-yi", dest="translate_yi", action="store_true", default=False, help="translate yi1 as 1")
     (opts,args) = optparser.parse_args()
 
+    result = []
+
     for line in sys.stdin:
         line = line.rstrip()
         spans = process_chinese(line, translate_yi=opts.translate_yi)
-        print(json.dumps([tokenize_digits(e[0]).split() for (_,_,e) in spans]))
+        result.append([tokenize_digits(e[0]).split() for (_,_,e) in spans])
+    print(json.dumps(result))
 
